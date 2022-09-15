@@ -27,7 +27,6 @@ pids
 /build
 
 # misc
-.DS_Store
 .env
 .env.test
 .env.local
