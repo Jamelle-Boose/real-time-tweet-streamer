@@ -7,6 +7,7 @@ const request = require("request")
 const path = require("path")
 const socketIo = require("socket.io")
 const http = require("http")
+const Client = require("twitter-api-sdk").Client
 
 const app = express()
 let port = process.env.PORT || 3000
@@ -105,43 +106,52 @@ app.post("/api/rules", async (req, res) => {
   }
 })
 
-const streamTweets = (socket, token) => {
-  let stream
+const streamTweets = async (socket, token) => {
+  // let stream
 
-  const config = {
-    url: streamURL,
-    auth: {
-      bearer: token,
-    },
-    timeout: 31000,
-  }
+  // const config = {
+  //   url: streamURL,
+  //   auth: {
+  //     bearer: token,
+  //   },
+  //   timeout: 31000,
+  // }
 
   try {
-    const stream = request.get(config)
+    // const stream = request.get(config)
+    const client = new Client(token)
+    const twitStream = client.tweets.searchStream({
+      "tweet.fields": ["context_annotations"],
+      expansions: ["author_id"],
+    })
 
-    stream
-      .on("data", data => {
-        try {
-          const json = JSON.parse(data)
-          if (json.connection_issue) {
-            socket.emit("error", json)
-            reconnect(stream, socket, token)
-          } else {
-            if (json.data) {
-              socket.emit("tweet", json)
-            } else {
-              socket.emit("authError", json)
-            }
-          }
-        } catch (e) {
-          socket.emit("heartbeat")
-        }
-      })
-      .on("error", error => {
-        // Connection timed out
-        socket.emit("error", errorMessage)
-        reconnect(stream, socket, token)
-      })
+    for await (const tweet of twitStream) {
+      socket.emit("tweet", tweet)
+    }
+
+    // stream
+    //   .on("data", data => {
+    //     try {
+    //       const json = JSON.parse(data)
+    //       if (json.connection_issue) {
+    //         socket.emit("error", json)
+    //         reconnect(stream, socket, token)
+    //       } else {
+    //         if (json.data) {
+    //           socket.emit("tweet", json)
+    //         } else {
+    //           socket.emit("authError", json)
+    //         }
+    //       }
+    //     } catch (e) {
+    //       socket.emit("heartbeat")
+    //     }
+    //   })
+    //   .on("error", error => {
+    //     // Connection timed out
+    //     socket.emit("error", errorMessage)
+    //     reconnect(stream, socket, token)
+    //   })
   } catch (e) {
     socket.emit("authError", authMessage)
   }
