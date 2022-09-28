@@ -1,6 +1,7 @@
 require("dotenv").config()
 
 const express = require("express")
+const cors = require("cors")
 const bodyParser = require("body-parser")
 const util = require("util")
 const request = require("request")
@@ -15,6 +16,7 @@ const post = util.promisify(request.post)
 const get = util.promisify(request.get)
 
 app.use(bodyParser.json())
+app.use(cors())
 app.use(bodyParser.urlencoded({ extended: true }))
 
 const server = http.createServer(app)
